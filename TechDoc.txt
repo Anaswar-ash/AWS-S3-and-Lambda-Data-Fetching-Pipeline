@@ -1,0 +1,83 @@
+Technical Documentation: S3-Lambda Data Pipeline
+1. Overview
+This document provides a technical explanation of the AWS S3 and Lambda-based data fetching pipeline. The system is designed to automatically trigger a data fetching process when a new file is uploaded to a designated S3 bucket.
+
+2. System Architecture
+The architecture consists of three main components:
+
+AWS S3 (Simple Storage Service): Acts as the entry point for the pipeline. It's used to store raw files.
+
+AWS Lambda: A serverless compute service that runs code in response to events. In this case, the event is a file creation in the S3 bucket.
+
+Public API: An external data source from which the Lambda function retrieves data.
+
+The workflow is as follows:
+
+A user or an automated process uploads a file to the specified S3 bucket.
+
+S3 emits an ObjectCreated event.
+
+The S3 event trigger, configured on the Lambda function, invokes the function.
+
+The Lambda function executes, making a GET request to a public API.
+
+The function logs the API response to Amazon CloudWatch for monitoring and debugging.
+
+3. Python Scripts
+3.1. s3_operations.py
+This is a command-line utility script for manual interaction with the S3 bucket.
+
+Purpose: To allow users to list, upload, and download files from the S3 bucket directly from their local machine.
+
+Library: boto3, the AWS SDK for Python.
+
+Functionality:
+
+list_files(bucket_name): Lists all objects in the specified bucket.
+
+upload_file(bucket_name, file_path, object_name): Uploads a local file to S3.
+
+download_file(bucket_name, object_name, file_path): Downloads an object from S3 to a local file.
+
+Usage: It uses argparse to handle command-line arguments for different actions (list, upload, download).
+
+3.2. lambda_function.py
+This script contains the core logic that runs in AWS Lambda.
+
+Purpose: To be executed upon an S3 trigger, fetch data from a public API, and log the result.
+
+Libraries: boto3, requests, json.
+
+Handler Function: lambda_handler(event, context) is the main entry point for the Lambda execution.
+
+event: A JSON object containing data about the triggering event (in this case, S3 event details).
+
+context: An object providing runtime information about the invocation, function, and execution environment.
+
+Logic:
+
+It extracts the bucket name and the key (filename) of the newly uploaded file from the event object.
+
+It prints a message indicating which file triggered the function.
+
+It makes an HTTP GET request to https://jsonplaceholder.typicode.com/posts/1 (a public mock API).
+
+It checks for a successful response (HTTP 200).
+
+It logs the fetched data and a success message.
+
+If the API call fails, it logs an error message.
+
+The return value is a JSON object indicating the status of the execution.
+
+4. Deployment and Configuration
+Lambda Deployment: The lambda_function.py code is deployed to AWS Lambda. Any dependencies not included in the standard Lambda runtime (like requests in this case) would typically be packaged in a deployment ZIP file or a Lambda Layer. For this example, requests is part of the boto3 environment in recent Python runtimes on Lambda, so no extra packaging is needed.
+
+IAM Roles: Security is managed through IAM roles.
+
+Lambda Execution Role: This role grants the Lambda function the necessary permissions to interact with other AWS services. It needs AWSLambdaBasicExecutionRole for logging and AmazonS3ReadOnlyAccess (or more specific permissions) to access S3 object information.
+
+S3 Trigger: The connection between S3 and Lambda is established via an event notification configuration on the S3 bucket. This configuration specifies which event types (e.g., s3:ObjectCreated:*) should invoke which Lambda function.
+
+5. Monitoring and Logging
+All print() statements and logging output from the Lambda function are automatically sent to Amazon CloudWatch Logs. A new log group is created for the Lambda function, and each invocation creates a new log stream within that group. This is the primary way to monitor execution and debug any issues.
