@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # --- IMPORTANT ---
 # Replace this with your actual S3 bucket name.
 # It must be globally unique.
-S3_BUCKET_NAME = "your-unique-bucket-name-here"
+S3_BUCKET_NAME = "my-unique-data-bucket-1234-5"
 
 
 def list_files(bucket_name):
